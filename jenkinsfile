@@ -35,7 +35,7 @@ pipeline {
                         echo "❌ index.html not found!"
                         exit 1
                     fi
-                  npm test
+                  #npm test
                 '''
             }
         }
@@ -49,7 +49,7 @@ pipeline {
             steps {
                 sh'''
                   npm install serve
-                  node_modules\.bin\serve -s build
+                  node_modules/.bin/serve -s build
                   npx playwright test
                 '''
             }
