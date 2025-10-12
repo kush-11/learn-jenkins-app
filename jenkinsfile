@@ -60,7 +60,7 @@ pipeline {
         always {
             archiveArtifacts allowEmptyArchive: true, artifacts: '**/jest-results/junit.xml'
             junit 'jest-results/junit.xml'
-            ls -la jest-results
+            sh 'ls -la jest-results'
         }
     }
 }
