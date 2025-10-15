@@ -19,41 +19,87 @@ pipeline {
                 '''
             }
         }*/
-        stage("Test") {
-            agent {
-                docker {
-                    image 'node:18-alpine'
-                    reuseNode true
+    //     stage("Test") {
+    //         agent {
+    //             docker {
+    //                 image 'node:18-alpine'
+    //                 reuseNode true
+    //             }
+    //         }
+    //         steps {
+    //             sh'''
+    //               echo "test stage"
+    //               if test -f "build/index.html"; then
+    //                     echo "✅ index.html exists."
+    //                 else
+    //                     echo "❌ index.html not found!"
+    //                     exit 1
+    //                 fi
+    //               #npm test
+    //             '''
+    //         }
+    //     }
+    //     stage("E2E") {
+    //         agent {
+    //             docker {
+    //                 image 'mcr.microsoft.com/playwright:v1.56.0-noble'
+    //                 reuseNode true
+    //             }
+    //         }
+    //         steps {
+    //             sh'''
+    //               npm install serve
+    //               node_modules/.bin/serve -s build &
+    //               sleep 10
+    //               npx playwright test
+    //             '''
+    //         }
+    //     }
+    // }
+    stages('run tests') {
+        parallel {
+                stage("Test") {
+                agent {
+                    docker {
+                        image 'node:18-alpine'
+                        reuseNode true
+                    }
+                }
+                steps {
+                    sh'''
+                    echo "test stage"
+                    if test -f "build/index.html"; then
+                            echo "✅ index.html exists."
+                        else
+                            echo "❌ index.html not found!"
+                            exit 1
+                        fi
+                    #npm test
+                    '''
+                }
+                post {
+                    always {
+                        publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Playwright HTML Report', reportTitles: '', useWrapperFileDirectly: true])
+                    }
                 }
             }
-            steps {
-                sh'''
-                  echo "test stage"
-                  if test -f "build/index.html"; then
-                        echo "✅ index.html exists."
-                    else
-                        echo "❌ index.html not found!"
-                        exit 1
-                    fi
-                  #npm test
-                '''
-            }
-        }
-        stage("E2E") {
-            agent {
-                docker {
-                    image 'mcr.microsoft.com/playwright:v1.56.0-noble'
-                    reuseNode true
+            stage("E2E") {
+                agent {
+                    docker {
+                        image 'mcr.microsoft.com/playwright:v1.56.0-noble'
+                        reuseNode true
+                    }
+                }
+                steps {
+                    sh'''
+                    npm install serve
+                    node_modules/.bin/serve -s build &
+                    sleep 10
+                    npx playwright test
+                    '''
                 }
             }
-            steps {
-                sh'''
-                  npm install serve
-                  node_modules/.bin/serve -s build &
-                  sleep 10
-                  npx playwright test
-                '''
-            }
+
         }
     }
     //post {
