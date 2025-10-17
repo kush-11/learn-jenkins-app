@@ -1,3 +1,78 @@
+// pipeline {
+//     agent any
+//     stages {
+//         stage('Run Tests') {
+//             parallel {
+//                 stage("Test") {
+//                     agent {
+//                         docker {
+//                             image 'node:18-alpine'
+//                             reuseNode true
+//                         }
+//                     }
+//                     steps {
+//                         sh '''
+//                             echo "Test stage"
+//                             if test -f "build/index.html"; then
+//                                 echo "✅ index.html exists."
+//                             else
+//                                 echo "❌ index.html not found!"
+//                                 exit 1
+//                             fi
+//                         '''
+//                     }
+//                 }
+
+                
+
+//                 stage("E2E") {
+//                     agent {
+//                         docker {
+//                             image 'mcr.microsoft.com/playwright:v1.56.0-noble'
+//                             reuseNode true
+//                         }
+//                     }
+//                     steps {
+//                         sh '''
+//                             npm install serve
+//                             node_modules/.bin/serve -s build &
+//                             sleep 10
+//                             npx playwright test
+//                         '''
+//                     }
+//                 }
+//             }
+//         stage('Deploy') {
+//                     agent {
+//                         docker {
+//                             image 'node:18-alpine'
+//                             reuseNode true
+//                         }
+//                     }
+//                     steps {
+//                         sh '''
+//                             npm install netlify-cli@20.1.1
+//                             node_modules/.bin/netlify --version
+//                         '''
+//                     }
+//                 }
+//         }
+        
+        
+//     }
+//     // Optional post block (Uncomment to use)
+//     // post {
+//     //     always {
+//     //         publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Playwright HTML Report', reportTitles: '', useWrapperFileDirectly: true])
+//     //     }
+//     // }
+// }
+
+
+
+
+
+
 pipeline {
     agent any
     stages {
@@ -11,19 +86,18 @@ pipeline {
                         }
                     }
                     steps {
-                        sh '''
+                        script {
                             echo "Test stage"
-                            if test -f "build/index.html"; then
+                            if (fileExists('build/index.html')) {
                                 echo "✅ index.html exists."
-                            else
+                            } else {
                                 echo "❌ index.html not found!"
-                                exit 1
-                            fi
-                        '''
+                                currentBuild.result = 'FAILURE'
+                                error("index.html not found!")
+                            }
+                        }
                     }
                 }
-
-                
 
                 stage("E2E") {
                     agent {
@@ -33,32 +107,31 @@ pipeline {
                         }
                     }
                     steps {
-                        sh '''
-                            npm install serve
-                            node_modules/.bin/serve -s build &
+                        script {
+                            sh 'npm install serve'
+                            sh 'node_modules/.bin/serve -s build &'
                             sleep 10
-                            npx playwright test
-                        '''
+                            sh 'npx playwright test'
+                        }
                     }
                 }
             }
-        stage('Deploy') {
-                    agent {
-                        docker {
-                            image 'node:18-alpine'
-                            reuseNode true
-                        }
-                    }
-                    steps {
-                        sh '''
-                            npm install netlify-cli@20.1.1
-                            node_modules/.bin/netlify --version
-                        '''
-                    }
-                }
         }
-        
-        
+
+        stage('Deploy') {
+            agent {
+                docker {
+                    image 'node:18-alpine'
+                    reuseNode true
+                }
+            }
+            steps {
+                script {
+                    sh 'npm install netlify-cli@20.1.1'
+                    sh 'node_modules/.bin/netlify --version'
+                }
+            }
+        }
     }
     // Optional post block (Uncomment to use)
     // post {
