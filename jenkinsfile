@@ -76,8 +76,8 @@
 pipeline {
     agent any
     environment {
-        NETLIFY_SITE_ID = '' // Set an empty variable initially, it will be set dynamically
-        NETLIFY_AUTH_TOKEN = credentials('netlify_auth_token') // Use credentials stored in Jenkins for authentication
+        NETLIFY_SITE_ID = '2f658820-9963-4099-b389-150c062e54f7' // Set an empty variable initially, it will be set dynamically
+        NETLIFY_AUTH_TOKEN = credentials('netlify-token') // Use credentials stored in Jenkins for authentication
     }
     stages {
         stage('Run Tests') {
@@ -130,37 +130,19 @@ pipeline {
                 }
             }
             steps {
-                script {
-                    sh 'npm install netlify-cli@20.1.1'
-                    sh 'node_modules/.bin/netlify --version'
-                    if (env.NETLIFY_SITE_ID?.trim()) {
-                        echo "Deploying to existing Netlify site with ID: ${env.NETLIFY_SITE_ID}"
-                        sh "netlify deploy --site ${env.NETLIFY_SITE_ID} --prod"
-                    } else {
-                        // No Site ID, create a new site and deploy
-                        echo "No Site ID found. Creating new Netlify site..."
-                        
-                        // Deploy first time (this will create the site and get the Site ID)
-                        def deployResponse = sh(script: "netlify deploy --prod --dir=build", returnStdout: true).trim()
-
-                        // Extract the Site ID from the output
-                        def siteId = deployResponse =~ /Site ID: (\S+)/
-                        if (siteId) {
-                            env.NETLIFY_SITE_ID = siteId[0][1]
-                            echo "New Netlify Site created with Site ID: ${env.NETLIFY_SITE_ID}"
-                        } else {
-                            error("Failed to extract Site ID from Netlify deployment.")
-                        }
-                    }
-                }
+                sh'''
+                    npm install netlify-cli@20.1.1
+                    node_modules/.bin/netlify --version
+                    echo "site id: $NETLIFY_SITE_ID"
+                    node_modules/.bin/netlify status
+                '''
             }
         }
     }
-}
     // Optional post block (Uncomment to use)
     // post {
     //     always {
     //         publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Playwright HTML Report', reportTitles: '', useWrapperFileDirectly: true])
     //     }
     // }
-
+}
